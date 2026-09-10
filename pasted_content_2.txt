@@ -1,0 +1,202 @@
+The previous requested features are now complete.
+
+Before adding any major new feature, perform a COMPLETE QUALITY AUDIT and BUG-FIX PASS on the entire application.
+
+This is a real kids educational quiz app, so do not just inspect the UI. Test the actual functionality.
+
+IMPORTANT:
+Do NOT add login, signup, OTP, Firebase, Supabase, backend, payment, or user accounts yet.
+
+Do not unnecessarily redesign working features.
+
+TASK: FULL APPLICATION QA + BUG FIX
+
+Check and test the complete user journey:
+
+HOME
+→ Math
+→ Category
+→ Difficulty
+→ Quiz
+→ Select ABCD answer
+→ Correct/Wrong feedback
+→ Next Question
+→ Quiz Completion
+→ Celebration
+→ Result
+→ Home
+
+Then test:
+
+HOME
+→ English
+→ Category
+→ Difficulty
+→ Quiz
+→ Select ABCD answer
+→ Correct/Wrong feedback
+→ Next Question
+→ Quiz Completion
+→ Celebration
+→ Result
+→ Home
+
+TEST THESE AREAS:
+
+1. HOME SCREEN
+- All buttons work
+- All cards are clickable
+- Navigation works
+- No broken links
+- No overlapping elements
+- Mobile layout is correct
+
+2. MATH QUIZ
+- Questions load correctly
+- Options are displayed correctly
+- Correct answer detection works
+- Wrong answer detection works
+- A question cannot be answered twice
+- Next question works
+- Question counter is accurate
+- Progress bar is accurate
+- Score is accurate
+- Stars are accurate
+
+3. ENGLISH QUIZ
+Perform the same tests.
+
+4. RESULT SYSTEM
+Verify:
+- total questions
+- correct answers
+- wrong answers
+- score
+- accuracy
+- stars earned
+are mathematically correct.
+
+Do not use hard-coded/fake values.
+
+5. LOCAL STORAGE
+Verify that:
+- quiz history is saved
+- best score is saved
+- total stars are saved
+- streak is saved
+- badges are saved
+- Parent Dashboard receives the actual data
+- data remains after browser refresh/reopen
+
+6. PARENT DASHBOARD
+Verify all statistics are calculated from real localStorage data.
+
+Check:
+- total quizzes
+- total questions
+- correct
+- wrong
+- accuracy
+- stars
+- best score
+- streak
+- Math progress
+- English progress
+- recent quiz results
+
+7. SOUND
+Verify:
+- Sound ON works
+- Sound OFF completely disables sounds
+- missing sound files do not break the application
+- no console errors are produced because of missing audio
+
+8. CELEBRATION
+Verify:
+- quiz completion animation appears
+- stars/confetti work
+- new best score message works
+- badge unlock message works
+- animation does not block navigation
+
+9. RESTART / RETRY
+Test:
+- Play Again
+- Back Home
+- starting another quiz
+- changing category
+- changing difficulty
+
+Make sure old quiz state does not leak into a new quiz.
+
+10. REFRESH / BACK BUTTON
+Test refreshing the browser during:
+- home
+- category selection
+- quiz
+- result
+
+Handle the state gracefully.
+
+11. MOBILE RESPONSIVENESS
+Test layouts for:
+- small Android phone
+- normal Android phone
+- tablet
+- desktop
+
+Fix:
+- horizontal scrolling
+- tiny buttons
+- text overflow
+- overlapping cards
+- buttons going outside screen
+- unsafe spacing around screen edges
+
+12. ACCESSIBILITY
+Check:
+- touch target sizes
+- readable text
+- clear correct/wrong feedback
+- keyboard accessibility where practical
+- sufficient contrast
+
+13. PERFORMANCE
+Remove unnecessary:
+- heavy animations
+- duplicate JavaScript
+- unnecessary dependencies
+- repeated event listeners
+- memory leaks
+
+Keep the app lightweight.
+
+14. CODE QUALITY
+Inspect all existing files.
+
+Remove or fix:
+- dead code
+- duplicate functions
+- conflicting event handlers
+- unused variables
+- broken references
+- console errors
+- invalid HTML
+- CSS conflicts
+
+IMPORTANT:
+Do not simply tell me what is wrong.
+
+FIX every issue you find.
+
+After fixing, run through the complete test flows again.
+
+At the end provide:
+
+A. Bugs/issues found
+B. Bugs/issues fixed
+C. Files changed
+D. Tests performed
+E. Any remaining limitations
+
+Do not move to backend development yet.

@@ -1,0 +1,726 @@
+You are an expert senior web-app developer and kids educational UX/UI designer.
+
+
+I want you to build a REAL, WORKING, mobile-first kids educational quiz web app called **“Learn & Play”**.
+
+
+IMPORTANT:
+
+
+
+- This must be a real functional application, NOT a demo/mockup.
+- Do not create fake buttons or fake functionality.
+- Do not add login, signup, OTP, email verification, password, or user accounts.
+- Do not add Firebase, Supabase, or any backend in this first version.
+- The app should work completely on the frontend.
+- Use browser localStorage for saving scores, stars, progress, streaks, and settings.
+- Keep the architecture clean so a backend can be added later without rebuilding the entire app.
+- Do not unnecessarily install large libraries or frameworks.
+- Make it fast and suitable for Android mobile screens.
+- Do not destroy or overwrite existing working code if files already exist. First inspect the existing project and then modify it carefully.
+
+
+
+MAIN PURPOSE
+
+
+The app is for children who want to learn English and Mathematics through fun multiple-choice games.
+
+
+The child should open the app and immediately see the main menu.
+
+
+The experience should feel more like a **fun educational game** than a boring school quiz.
+
+
+The visual design should be:
+
+
+
+- colourful
+- friendly
+- playful
+- modern
+- clean
+- easy for young children
+- large touch-friendly buttons
+- attractive on mobile
+- responsive on tablet and desktop
+
+
+
+Use tasteful 3D-style visual effects such as:
+
+
+
+- floating cards
+- soft depth
+- 3D-style buttons
+- floating stars
+- rounded objects
+- subtle shadows
+- small character/mascot areas
+- playful number and alphabet elements
+- gentle animations
+
+
+
+Do NOT make everything fully 3D. Keep performance fast.
+
+
+TECHNOLOGY
+
+
+Use:
+
+
+
+- HTML5
+- CSS3
+- Vanilla JavaScript
+
+
+
+Prefer a simple structure such as:
+
+
+index.html
+style.css
+app.js
+questions.js
+assets/
+
+
+If the existing project already has an equivalent structure, reuse it instead of unnecessarily creating duplicate files.
+
+
+Do not introduce React/Next.js/backend unless the existing project already requires it.
+
+
+HOME SCREEN
+
+
+When the app opens, show a beautiful home screen.
+
+
+Header:
+
+
+
+- App logo/name: “Learn & Play”
+- Friendly subtitle: “Learn • Play • Grow”
+- Small stars/progress indicator
+- Settings icon
+
+
+
+Main greeting:
+“👋 Hello Champion!”
+“Ready to learn and play?”
+
+
+Main category cards:
+
+
+
+1. 🧮 MATH ADVENTURE
+   Subtitle:
+   “Numbers can be fun!”
+2. 📚 ENGLISH WORLD
+   Subtitle:
+   “Learn English by playing!”
+3. 🔤 ABC & WORDS
+   Subtitle:
+   “Letters, words and spelling”
+4. 🧠 BRAIN GAMES
+   Subtitle:
+   “Challenge your brain!”
+
+
+
+Also include:
+
+
+🏆 MY PROGRESS
+
+
+Show:
+
+
+
+- Total Stars
+- Best Score
+- Quiz Streak
+- Badges
+
+
+
+The home screen should feel alive with subtle animations, but animations must not make the interface slow or distracting.
+
+
+NAVIGATION
+
+
+The app should use smooth screen transitions without unnecessary page reloads.
+
+
+Main navigation flow:
+
+
+Home
+→ Category
+→ Difficulty / Topic
+→ Quiz
+→ Answer Feedback
+→ Next Question
+→ Result
+→ Retry / Home
+
+
+Use clear Back buttons where appropriate.
+
+
+Prevent accidental loss of quiz progress.
+
+
+QUIZ DESIGN
+
+
+Questions must use MCQ format.
+
+
+Example:
+
+
+Question 4 / 10
+
+
+⭐ What is 8 × 3?
+
+
+A. 21
+B. 24
+C. 26
+D. 28
+
+
+Each answer must be a large touch-friendly button.
+
+
+When the child selects an answer:
+
+
+Correct:
+
+
+
+- show positive visual feedback
+- show “Correct! 🎉”
+- award stars
+- play a short success animation/sound if sound assets are available
+
+
+
+Wrong:
+
+
+
+- show “Oops! 😄”
+- clearly show the correct answer
+- do not confuse the child
+- then allow the child to continue
+
+
+
+Never allow multiple answers to be selected for the same question.
+
+
+After answering, show a clear Next button or automatically continue only if the interaction remains understandable for children.
+
+
+QUIZ HEADER
+
+
+Show:
+
+
+
+- Topic name
+- Question number, e.g. 4 / 10
+- Progress bar
+- Current score/stars
+
+
+
+Optional timer should be designed so that it can be enabled later. Do not make the first version stressful for young children.
+
+
+MATH SECTION
+
+
+Create a category selection screen for Mathematics.
+
+
+Initial categories:
+
+
+➕ Addition
+➖ Subtraction
+✖️ Multiplication
+➗ Division
+🔢 Number Series
+🧠 Math Challenge
+
+
+Difficulty:
+
+
+🟢 Easy
+🟡 Medium
+🔴 Hard
+
+
+The question system must be data-driven so more questions can easily be added later.
+
+
+ENGLISH SECTION
+
+
+Create:
+
+
+📖 English World
+
+
+Categories:
+
+
+🔤 Alphabet
+📝 Spelling
+📚 Vocabulary
+✍️ Grammar
+🖼️ Identify the Word
+💬 Simple English
+
+
+Difficulty:
+
+
+🟢 Easy
+🟡 Medium
+🔴 Hard
+
+
+Keep questions age-appropriate and simple initially.
+
+
+QUESTION DATA
+
+
+Do NOT hard-code question logic directly into UI code.
+
+
+Create a reusable question data structure.
+
+
+Each question should contain information similar to:
+
+
+
+- id
+- subject
+- category
+- difficulty
+- question
+- options
+- correctAnswer
+- explanation (optional)
+
+
+
+Example:
+
+
+{
+id: 1,
+subject: "math",
+category: "addition",
+difficulty: "easy",
+question: "What is 5 + 3?",
+options: ["6", "7", "8", "9"],
+correctAnswer: 2,
+explanation: "5 + 3 = 8"
+}
+
+
+The system should be able to randomly select questions from the relevant category and difficulty.
+
+
+Avoid repeating the same question during one quiz session.
+
+
+QUIZ SETTINGS
+
+
+Allow the child to choose:
+
+
+
+- 5 questions
+- 10 questions
+- 20 questions
+
+
+
+Default: 10 questions.
+
+
+Keep this interface extremely simple.
+
+
+SCORING
+
+
+Create a proper scoring system.
+
+
+Example:
+
+
+Correct answer = +10 points
+
+
+Also award stars.
+
+
+At the end show:
+
+
+🎉 AMAZING!
+
+
+Score:
+80 / 100
+
+
+⭐ Stars earned:
+8
+
+
+Correct:
+8
+
+
+Wrong:
+2
+
+
+Accuracy:
+80%
+
+
+Buttons:
+
+
+🔄 Play Again
+🏠 Home
+
+
+If a new best score is achieved:
+
+
+🏆 NEW BEST SCORE!
+
+
+Save the best score locally.
+
+
+REWARDS
+
+
+Implement a simple local reward system.
+
+
+Save:
+
+
+
+- total stars
+- best score
+- quizzes completed
+- correct answers
+- current streak
+- badges unlocked
+
+
+
+Possible badges:
+
+
+🌟 First Quiz
+🎯 10 Correct Answers
+🧮 Math Star
+📚 English Star
+🔥 Quiz Streak
+🏆 Quiz Champion
+
+
+Do not overcomplicate the reward system.
+
+
+LOCAL STORAGE
+
+
+Use localStorage only.
+
+
+Create a clean storage structure so it can later be replaced with an API/backend.
+
+
+Do not store sensitive information because there are no user accounts.
+
+
+The app should remember progress even after the browser is closed.
+
+
+SOUND
+
+
+Design the app so optional sound effects can be added:
+
+
+
+- correct answer
+- wrong answer
+- button tap
+- quiz complete
+- achievement
+
+
+
+Do not make external sound URLs mandatory.
+
+
+If sound files are not available, the app must still work perfectly.
+
+
+Include a simple sound on/off setting.
+
+
+ANIMATION
+
+
+Use lightweight CSS/JavaScript animations.
+
+
+Examples:
+
+
+
+- button press animation
+- card hover/tap effect
+- correct answer celebration
+- stars floating upward
+- progress bar animation
+- result reveal
+- subtle background movement
+
+
+
+Respect mobile performance.
+
+
+Avoid excessive animation.
+
+
+SETTINGS
+
+
+Create a simple settings panel containing:
+
+
+🔊 Sound: ON/OFF
+
+
+🎨 Theme option if practical
+
+
+ℹ️ About
+
+
+Do not include login/account settings.
+
+
+ABOUT SCREEN
+
+
+Show:
+
+
+“Learn & Play”
+
+
+“Fun learning through English and Math quizzes.”
+
+
+Keep this simple.
+
+
+ACCESSIBILITY
+
+
+Make the app usable for children:
+
+
+
+- large buttons
+- readable fonts
+- strong text/background contrast
+- clear correct/wrong states
+- no tiny controls
+- touch-friendly spacing
+- avoid relying only on colour to communicate an answer
+
+
+
+RESPONSIVE DESIGN
+
+
+The app must work properly on:
+
+
+
+- Android phones
+- small phones
+- large phones
+- tablets
+- desktop browsers
+
+
+
+Mobile is the primary target.
+
+
+Do not create horizontal scrolling.
+
+
+CODE QUALITY
+
+
+Important coding rules:
+
+
+
+1. Keep HTML, CSS and JavaScript organized.
+2. Avoid duplicated code.
+3. Use reusable functions.
+4. Use semantic HTML where practical.
+5. Add comments only where they are genuinely useful.
+6. Do not create unnecessary dependencies.
+7. Do not use fake API calls.
+8. Do not create fake login systems.
+9. Do not hard-code the final score.
+10. Make every quiz interaction actually work.
+11. Handle empty question sets gracefully.
+12. Handle refresh/reload safely.
+13. Prevent JavaScript errors in the browser console.
+14. Keep question data separate from quiz logic.
+15. Make future backend integration possible.
+
+
+
+IMPORTANT FUTURE ARCHITECTURE
+
+
+Although this first version has NO backend, structure the code so we can later add:
+
+
+
+- child profiles
+- parent dashboard
+- cloud progress
+- online leaderboard
+- larger question database
+- AI-generated questions
+- adaptive difficulty
+- achievements
+- analytics
+- subscriptions
+
+
+
+Do NOT implement those backend features now.
+
+
+FIRST DEVELOPMENT TASK
+
+
+Before writing code:
+
+
+
+1. Inspect the existing project files.
+2. Determine whether the project is already using HTML/CSS/JavaScript or another framework.
+3. Reuse the existing setup if practical.
+4. Identify files that should be created or modified.
+5. Do not delete working features without a reason.
+
+
+
+Then implement the first complete frontend foundation:
+
+
+
+- Home screen
+- Category navigation
+- Math category screen
+- English category screen
+- Basic quiz screen
+- Working ABCD answer selection
+- Correct/wrong feedback
+- Next question
+- Score calculation
+- Result screen
+- LocalStorage progress
+- Responsive mobile UI
+- Attractive kids-friendly visual design
+- Lightweight animations
+
+
+
+Use enough sample questions to prove that the system actually works.
+
+
+IMPORTANT:
+After implementation, test the complete flow:
+
+
+Home → Math → Category → Quiz → Answer → Next → Result → Home
+
+
+and:
+
+
+Home → English → Category → Quiz → Answer → Next → Result → Home
+
+
+Fix any errors you find.
+
+
+Do not stop at designing the interface. The quiz must actually function.
+
+
+At the end, give me a concise report containing:
+
+
+
+1. Files created/modified
+2. Features implemented
+3. How to run the app
+4. Any important limitations
+5. What should be built next
+
+
+
+Do not add backend/login/payment in this phase.
+
