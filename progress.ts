@@ -1,6 +1,7 @@
 import type { Difficulty, Subject } from "@/lib/questions";
 
-export const PROGRESS_STORAGE_KEY = "learn-and-play-progress-v1";
+export const PROGRESS_STORAGE_KEY = "learn-and-play-progress-v2";
+export const CLASS_STORAGE_KEY = "learn-and-play-class";
 
 export type QuizHistoryEntry = {
   id: string;
@@ -14,6 +15,7 @@ export type QuizHistoryEntry = {
   score: number;
   starsEarned: number;
   accuracy: number;
+  classLevel: number;
 };
 
 export type ProgressData = {
@@ -22,9 +24,12 @@ export type ProgressData = {
   quizzesCompleted: number;
   correctAnswers: number;
   currentStreak: number;
+  longestStreak: number;
+  lastQuizDate?: string;
   badges: string[];
   soundOn: boolean;
   quizHistory: QuizHistoryEntry[];
+  classLevel: number;
 };
 
 export const defaultProgress: ProgressData = {
@@ -33,18 +38,35 @@ export const defaultProgress: ProgressData = {
   quizzesCompleted: 0,
   correctAnswers: 0,
   currentStreak: 0,
+  longestStreak: 0,
+  lastQuizDate: undefined,
   badges: [],
   soundOn: true,
   quizHistory: [],
+  classLevel: 3,
 };
 
 export function loadProgress(): ProgressData {
   try {
     const stored = localStorage.getItem(PROGRESS_STORAGE_KEY);
-    if (!stored) return defaultProgress;
+    if (!stored) {
+      // Try to migrate from v1
+      const oldStored = localStorage.getItem("learn-and-play-progress-v1");
+      if (oldStored) {
+        const oldData = JSON.parse(oldStored) as Partial<ProgressData>;
+        const migrated = { ...defaultProgress, ...oldData, classLevel: 3 };
+        return migrated;
+      }
+      return defaultProgress;
+    }
     const parsed = JSON.parse(stored) as Partial<ProgressData>;
     const quizHistory = Array.isArray(parsed.quizHistory) ? parsed.quizHistory : [];
-    return { ...defaultProgress, ...parsed, quizHistory };
+    return { 
+      ...defaultProgress, 
+      ...parsed, 
+      quizHistory,
+      classLevel: parsed.classLevel ?? defaultProgress.classLevel,
+    };
   } catch {
     return defaultProgress;
   }
@@ -58,6 +80,25 @@ export function saveProgress(progress: ProgressData) {
   }
 }
 
+export function saveClassLevel(classLevel: number) {
+  try {
+    localStorage.setItem(CLASS_STORAGE_KEY, String(classLevel));
+  } catch {
+    // Class level remains in memory if storage unavailable.
+  }
+}
+
+export function loadClassLevel(): number {
+  try {
+    const stored = localStorage.getItem(CLASS_STORAGE_KEY);
+    if (!stored) return 3;
+    const parsed = parseInt(stored, 10);
+    return isNaN(parsed) || parsed < 1 || parsed > 5 ? 3 : parsed;
+  } catch {
+    return 3;
+  }
+}
+
 export function buildQuizHistoryEntry(input: Omit<QuizHistoryEntry, "id" | "completedAt" | "wrongAnswers" | "accuracy">): QuizHistoryEntry {
   const wrongAnswers = Math.max(0, input.totalQuestions - input.correctAnswers);
   return {
@@ -66,6 +107,35 @@ export function buildQuizHistoryEntry(input: Omit<QuizHistoryEntry, "id" | "comp
     completedAt: new Date().toISOString(),
     wrongAnswers,
     accuracy: input.totalQuestions ? Math.round((input.correctAnswers / input.totalQuestions) * 100) : 0,
+  };
+}
+
+export function updateStreak(progress: ProgressData): ProgressData {
+  const today = new Date().toDateString();
+  const lastDate = progress.lastQuizDate ? new Date(progress.lastQuizDate).toDateString() : null;
+  const yesterday = new Date(Date.now() - 86400000).toDateString();
+
+  let newStreak = progress.currentStreak;
+  let longestStreak = progress.longestStreak;
+
+  if (lastDate === today) {
+    // Already completed a quiz today, don't increment streak again
+    newStreak = progress.currentStreak;
+  } else if (lastDate === yesterday) {
+    // Completed quiz yesterday, continue the streak
+    newStreak = progress.currentStreak + 1;
+  } else {
+    // Gap in streak, reset to 1
+    newStreak = 1;
+  }
+
+  longestStreak = Math.max(longestStreak, newStreak);
+
+  return {
+    ...progress,
+    currentStreak: newStreak,
+    longestStreak,
+    lastQuizDate: new Date().toISOString(),
   };
 }
 
