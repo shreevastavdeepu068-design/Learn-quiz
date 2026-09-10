@@ -54,7 +54,7 @@ export function loadProgress(): ProgressData {
       const oldStored = localStorage.getItem("learn-and-play-progress-v1");
       if (oldStored) {
         const oldData = JSON.parse(oldStored) as Partial<ProgressData>;
-        const migrated = { ...defaultProgress, ...oldData, classLevel: 3 };
+        const migrated = { ...defaultProgress, ...oldData, classLevel: 3, longestStreak: oldData.currentStreak ?? 0 };
         return migrated;
       }
       return defaultProgress;
@@ -66,6 +66,7 @@ export function loadProgress(): ProgressData {
       ...parsed, 
       quizHistory,
       classLevel: parsed.classLevel ?? defaultProgress.classLevel,
+      longestStreak: parsed.longestStreak ?? parsed.currentStreak ?? 0,
     };
   } catch {
     return defaultProgress;
