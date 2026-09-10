@@ -38,11 +38,11 @@ import {
   type Question,
   type Subject,
 } from "@/lib/questions";
-import { buildQuizHistoryEntry, defaultProgress, loadProgress, saveProgress, summarizeProgress, type ProgressData, type QuizHistoryEntry } from "@/lib/progress";
+import { buildQuizHistoryEntry, defaultProgress, loadProgress, saveProgress, summarizeProgress, updateStreak, type ProgressData, type QuizHistoryEntry, loadClassLevel, saveClassLevel } from "@/lib/progress";
 import { playSound, setSoundEnabled } from "@/lib/sounds";
 
 const mascotSrc = "/manus-storage/learn-play-mascot_90d12e88.png";
-type Screen = "home" | "categories" | "quiz" | "result" | "settings" | "about" | "dashboard";
+type Screen = "class-select" | "home" | "categories" | "quiz" | "result" | "settings" | "about" | "dashboard";
 type Progress = ProgressData;
 type QuizResult = {
   subject: Subject;
@@ -79,6 +79,13 @@ const difficultyMeta: { id: Difficulty; label: string; note: string; color: stri
   { id: "hard", label: "Hard", note: "Big challenge", color: "red" },
 ];
 
+const classOptions = [
+  { id: 1, label: "Class 1", hint: "Just starting" },
+  { id: 2, label: "Class 2", hint: "Making progress" },
+  { id: 3, label: "Class 3", hint: "Getting stronger" },
+  { id: 4, label: "Class 4", hint: "Well on the way" },
+  { id: 5, label: "Class 5", hint: "Ready for advanced" },
+];
 
 function IconButton({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
   return (
@@ -135,6 +142,51 @@ function CategoryCard({ icon, label, hint, color, onClick }: { icon: string; lab
   );
 }
 
+function ClassSelectionScreen({ onSelect }: { onSelect: (classLevel: number) => void }) {
+  return (
+    <div className="screen home-screen">
+      <ScreenHeader />
+      <main className="home-content">
+        <section className="hero-card">
+          <div className="hero-copy">
+            <span className="eyebrow"><span className="eyebrow-dot" /> Welcome, learner!</span>
+            <h1>Pick your<br /><em>Class</em></h1>
+            <p>Choose your grade to get started. Questions will match your level!</p>
+            <div className="hero-actions">
+              <span className="hero-tip"><Zap size={15} fill="currentColor" /> Pick where you're at now.</span>
+            </div>
+          </div>
+          <div className="hero-art" aria-label="Friendly fox mascot">
+            <div className="orbit orbit-one" /><div className="orbit orbit-two" />
+            <span className="float-star star-a">✦</span><span className="float-star star-b">✧</span><span className="float-star star-c">✦</span>
+            <img src={mascotSrc} alt="A friendly orange fox with a blue backpack" />
+            <div className="mascot-bubble">Let's learn!</div>
+          </div>
+        </section>
+
+        <section className="section-heading">
+          <div><span className="section-kicker">Choose your level</span><h2>Which class are you in?</h2></div>
+        </section>
+        <section className="category-grid" aria-label="Class selection">
+          {classOptions.map((option) => (
+            <button
+              key={option.id}
+              className="subject-card brain-card"
+              type="button"
+              onClick={() => onSelect(option.id)}
+            >
+              <span className="subject-card-art"><span className="abc-art" style={{ fontSize: "24px" }}>{option.id}</span><span>class</span></span>
+              <span><strong>{option.label}</strong><small>{option.hint}</small></span>
+              <span className="go-badge"><ArrowRight size={18} /></span>
+            </button>
+          ))}
+        </section>
+      </main>
+      <footer className="home-footer"><span>Made for curious minds</span><span className="footer-dots">● ● ●</span><span>100% screen-time friendly</span></footer>
+    </div>
+  );
+}
+
 function HomeScreen({ progress, onSubject, onSettings, onAbout, onDashboard }: { progress: Progress; onSubject: (subject: Subject) => void; onSettings: () => void; onAbout: () => void; onDashboard: () => void }) {
   return (
     <div className="screen home-screen">
@@ -154,7 +206,7 @@ function HomeScreen({ progress, onSubject, onSettings, onAbout, onDashboard }: {
             <div className="orbit orbit-one" /><div className="orbit orbit-two" />
             <span className="float-star star-a">✦</span><span className="float-star star-b">✧</span><span className="float-star star-c">✦</span>
             <img src={mascotSrc} alt="A friendly orange fox with a blue backpack" />
-            <div className="mascot-bubble">Let’s go!</div>
+            <div className="mascot-bubble">Let's go!</div>
           </div>
         </section>
 
@@ -198,7 +250,7 @@ function HomeScreen({ progress, onSubject, onSettings, onAbout, onDashboard }: {
               const unlocked = progress.badges.includes(badge.id);
               return <span className={`mini-badge ${unlocked ? "unlocked" : "locked"}`} key={badge.id} title={badge.description}>{unlocked ? badge.icon : <LockKeyhole size={14} />}</span>;
             })}
-            <button className="badge-caption" type="button" onClick={onAbout}>{progress.badges.length ? `${progress.badges.length} badge${progress.badges.length === 1 ? "" : "s"} unlocked` : "Your first badge is waiting"}<ChevronRight size={14} /></button>
+            <button className="badge-caption" type="button" onClick={onAbout}>{progress.badges.length ? `${progress.badges.length} badge${progress.badges.length === 1 ? "" : "s"} unlocked` : "You haven't earned any badges yet"}</button>
             <button className="parent-link" type="button" onClick={onDashboard}><BarChart3 size={15} /> Parent dashboard</button>
           </div>
         </section>
@@ -208,7 +260,7 @@ function HomeScreen({ progress, onSubject, onSettings, onAbout, onDashboard }: {
   );
 }
 
-function CategoriesScreen({ subject, onBack, onSettings, onStart }: { subject: Subject; onBack: () => void; onSettings: () => void; onStart: (category: string, difficulty: Difficulty, count: number) => void }) {
+function CategoriesScreen({ subject, onBack, onSettings, onStart, classLevel }: { subject: Subject; onBack: () => void; onSettings: () => void; onStart: (category: string, difficulty: Difficulty, count: number) => void; classLevel: number }) {
   const meta = subjectMeta[subject];
   const categories = subject === "math" ? mathCategories : englishCategories;
   const [category, setCategory] = useState<string>(categories[0].id);
@@ -221,23 +273,23 @@ function CategoriesScreen({ subject, onBack, onSettings, onStart }: { subject: S
       <ScreenHeader onBack={onBack} onSettings={onSettings} />
       <main className="inner-content">
         <section className={`subject-banner ${meta.color}`}>
-          <div><span className="eyebrow">{meta.icon} {meta.eyebrow}</span><h1>{meta.label}</h1><p>{meta.intro}</p></div>
+          <div><span className="eyebrow">{meta.icon} {meta.eyebrow}</span><h1>{meta.label}</h1><p>{meta.intro}</p><span style={{ fontSize: "12px", marginTop: "8px", opacity: 0.8 }}>Class {classLevel} questions</span></div>
           <span className="banner-sticker">{subject === "math" ? "∑" : "ABC"}</span>
         </section>
         <div className="selection-layout">
           <section className="selection-panel">
             <div className="panel-title"><span className="step-number">1</span><div><span className="section-kicker">Choose a mission</span><h2>What should we practise?</h2></div></div>
             <div className="mission-grid">
-              {categories.map((item) => <button key={item.id} type="button" className={`mission-option tint-${item.color} ${category === item.id ? "selected" : ""}`} onClick={() => setCategory(item.id)}><span className="mission-icon">{item.icon}</span><span><strong>{item.label}</strong><small>{item.hint}</small></span>{category === item.id && <CheckCircle2 className="selected-check" size={20} />}</button>)}
+              {categories.map((item) => <button key={item.id} type="button" className={`mission-option tint-${item.color} ${category === item.id ? "selected" : ""}`} onClick={() => setCategory(item.id)}><span>{item.icon}</span><span><strong>{item.label}</strong><small>{item.hint}</small></span></button>)}
             </div>
           </section>
           <aside className="setup-card">
             <div className="panel-title"><span className="step-number">2</span><div><span className="section-kicker">Set your pace</span><h2>Ready when you are</h2></div></div>
             <span className="setup-label">Difficulty</span>
-            <div className="difficulty-row">{difficultyMeta.map((item) => <button type="button" key={item.id} className={`difficulty-option ${item.color} ${difficulty === item.id ? "selected" : ""}`} onClick={() => setDifficulty(item.id)}><span className="difficulty-dot" /><strong>{item.label}</strong><small>{item.note}</small></button>)}</div>
+            <div className="difficulty-row">{difficultyMeta.map((item) => <button type="button" key={item.id} className={`difficulty-option ${item.color} ${difficulty === item.id ? "selected" : ""}`} onClick={() => setDifficulty(item.id)}><strong>{item.label}</strong><small>{item.note}</small></button>)}</div>
             <span className="setup-label">Number of questions</span>
             <div className="count-row">{[5, 10, 20].map((value) => <button type="button" key={value} className={count === value ? "selected" : ""} onClick={() => setCount(value)}>{value}<small>questions</small></button>)}</div>
-            <div className="setup-summary"><span className="summary-icon">{selected.icon}</span><span><strong>{selected.label}</strong><small>{difficultyMeta.find((item) => item.id === difficulty)?.label} · {count} questions</small></span></div>
+            <div className="setup-summary"><span className="summary-icon">{selected.icon}</span><span><strong>{selected.label}</strong><small>{difficultyMeta.find((item) => item.id === difficulty)?.label} level</small></span></div>
             <button className="primary-button start-button" type="button" onClick={() => onStart(category, difficulty, count)}>Start adventure <ArrowRight size={19} /></button>
           </aside>
         </div>
@@ -268,12 +320,12 @@ function QuizScreen({ subject, category, difficulty, questions, questionIndex, c
           <div className="answer-grid">
             {question.options.map((option, index) => {
               const optionState = !answered ? "" : index === question.correctAnswer ? "correct" : index === selectedAnswer ? "wrong" : "muted";
-              return <button key={option} type="button" disabled={answered} className={`answer-button ${optionState}`} onClick={() => onAnswer(index)}><span className="answer-letter">{letters[index]}</span><span>{option}</span>{answered && index === question.correctAnswer && <CheckCircle2 size={21} />}{answered && index === selectedAnswer && index !== question.correctAnswer && <XCircle size={21} />}</button>;
+              return <button key={option} type="button" disabled={answered} className={`answer-button ${optionState}`} onClick={() => onAnswer(index)}><span className="answer-letter">{letters[index]}</span><span>{option}</span></button>;
             })}
           </div>
-          {answered && <div className={`feedback-box ${isCorrect ? "correct" : "wrong"}`}><span className="feedback-icon">{isCorrect ? <Sparkles size={21} /> : <CircleHelp size={21} />}</span><span><strong>{isCorrect ? "Correct! 🎉" : "Oops! 😄"}</strong><small>{isCorrect ? question.explanation : `The answer is ${question.options[question.correctAnswer]}. ${question.explanation}`}</small></span></div>}
+          {answered && <div className={`feedback-box ${isCorrect ? "correct" : "wrong"}`}><span className="feedback-icon">{isCorrect ? <Sparkles size={21} /> : <CircleHelp size={21} />}</span><span>{isCorrect ? "That's right!" : question.explanation || "That's not quite right. Let's keep learning!"}</span><button className="next-button" type="button" onClick={onNext}>{questionIndex === questions.length - 1 ? "See results" : "Next"} <ArrowRight size={17} /></button></div>}
         </section>
-        <div className="quiz-bottom"><span className="quiz-encouragement"><span className="tiny-star">★</span> {answered ? `${correctCount} correct so far` : "You’ve got this!"}</span>{answered && <button className="primary-button next-button" type="button" onClick={onNext}>{questionIndex === questions.length - 1 ? "See my result" : "Next question"} <ArrowRight size={18} /></button>}</div>
+        <div className="quiz-bottom"><span className="quiz-encouragement"><span className="tiny-star">★</span> {answered ? `${correctCount} correct so far` : "You've got this!"}</span>{answered && <button className="next-button" type="button" onClick={onNext}>{questionIndex === questions.length - 1 ? "Finish" : "Next"} <ArrowRight size={17} /></button>}</div>
       </main>
     </div>
   );
@@ -286,19 +338,15 @@ function ResultScreen({ result, progress, onAgain, onHome }: { result: QuizResul
     <div className="screen result-screen">
       <ScreenHeader onBack={onHome} />
       <main className="result-content">
-        <section className="result-hero"><div className="celebration-burst" aria-hidden="true"><span>✦</span><span>✧</span><span>★</span><span>✦</span><span>•</span><span>✧</span></div><div className="confetti confetti-one">✦</div><div className="confetti confetti-two">✧</div><div className="result-trophy"><Trophy size={42} /></div><span className="eyebrow"><span className="eyebrow-dot" /> Adventure complete</span><h1>{result.newBest ? "New best score!" : result.correct === result.total ? "Amazing!" : "Great try!"}</h1><p>{result.newBest ? "You just made your personal best." : "Every question you try makes your brain stronger."}</p></section>
-        <section className="result-score-card"><div className="score-main"><span>Score</span><strong>{result.score}<small> / {result.total * 10}</small></strong></div><div className="result-stats"><div><span className="result-icon star-icon"><Star size={18} fill="currentColor" /></span><strong>{result.stars}</strong><small>Stars earned</small></div><div><span className="result-icon correct-icon"><CheckCircle2 size={18} /></span><strong>{result.correct}</strong><small>Correct</small></div><div><span className="result-icon wrong-icon"><XCircle size={18} /></span><strong>{result.total - result.correct}</strong><small>Wrong</small></div><div><span className="result-icon accuracy-icon"><Zap size={18} fill="currentColor" /></span><strong>{accuracy}%</strong><small>Accuracy</small></div></div></section>
+        <section className="result-hero"><div className="celebration-burst" aria-hidden="true"><span>✦</span><span>✧</span><span>★</span><span>✦</span><span>•</span><span>✧</span></div><div className="result-trophy"><Trophy size={64} fill="currentColor" /></div><h1 style={{ marginTop: "16px" }}>Quiz complete!</h1></section>
+        <section className="result-score-card"><div className="score-main"><span>Score</span><strong>{result.score}<small> / {result.total * 10}</small></strong></div><div className="result-stats"><span><strong>{result.correct}</strong><small>correct</small></span><span><strong>{result.total - result.correct}</strong><small>missed</small></span><span><strong>{accuracy}%</strong><small>accuracy</small></span></div></section>
         {result.newBest && <div className="new-best"><Trophy size={18} /> NEW BEST SCORE <span>{progress.bestScore}</span></div>}
-        {result.unlockedBadge && <div className="badge-unlocked"><span className="badge-unlocked-icon">{badgeCatalog.find((badge) => badge.id === result.unlockedBadge)?.icon ?? "✦"}</span><span><strong>Badge unlocked!</strong><small>{badgeCatalog.find((badge) => badge.id === result.unlockedBadge)?.label ?? "New achievement"}</small></span><Sparkles size={20} /></div>}
-        <section className="result-badge-note"><span className={`result-subject-icon ${meta.color}`}>{meta.icon}</span><span><strong>{meta.label} complete</strong><small>{result.difficulty} · {result.total} questions · {progress.totalStars} total stars</small></span><Medal size={22} /></section>
+        {result.unlockedBadge && <div className="badge-unlocked"><span className="badge-unlocked-icon">{badgeCatalog.find((badge) => badge.id === result.unlockedBadge)?.icon ?? "✦"}</span><span><strong>Badge unlocked!</strong><small>{badgeCatalog.find((badge) => badge.id === result.unlockedBadge)?.label}</small></span></div>}
+        <section className="result-badge-note"><span className={`result-subject-icon ${meta.color}`}>{meta.icon}</span><span><strong>{meta.label} complete</strong><small>{result.difficulty} · {result.category}</small></span></section>
         <div className="result-actions"><button className="primary-button" type="button" onClick={onAgain}><RotateCcw size={18} /> Play again</button><button className="secondary-button" type="button" onClick={onHome}><HomeIcon size={18} /> Home</button></div>
       </main>
     </div>
   );
-}
-
-function formatCategory(category: string) {
-  return category.replace("series", "Number Series").replace("simple", "Simple English").replace("addition", "Addition").replace("subtraction", "Subtraction").replace("multiplication", "Multiplication").replace("division", "Division").replace("challenge", "Math Challenge").replace("alphabet", "Alphabet").replace("spelling", "Spelling").replace("vocabulary", "Vocabulary").replace("grammar", "Grammar");
 }
 
 function ParentDashboard({ progress, onBack, onHome }: { progress: Progress; onBack: () => void; onHome: () => void }) {
@@ -307,10 +355,10 @@ function ParentDashboard({ progress, onBack, onHome }: { progress: Progress; onB
   return <div className="screen inner-screen dashboard-screen">
     <ScreenHeader onBack={onBack} right={<button className="dashboard-home" type="button" onClick={onHome}><HomeIcon size={16} /> Child view</button>} />
     <main className="dashboard-content">
-      <section className="dashboard-heading"><div><span className="eyebrow"><BarChart3 size={17} /> Parent corner</span><h1>Progress dashboard</h1><p>A calm look at the learning journey, saved on this device.</p></div><div className="dashboard-sticker"><Trophy size={35} /></div></section>
+      <section className="dashboard-heading"><div><span className="eyebrow"><BarChart3 size={17} /> Parent corner</span><h1>Progress dashboard</h1><p>A calm look at the learning journey, saved on this device.</p></div></section>
       <section className="dashboard-overview">
         <StatPill tone="score" icon={<History size={19} />} value={progress.quizzesCompleted} label="quizzes completed" />
-        <StatPill tone="stars" icon={<ClipboardListIcon />} value={summary.totalQuestions} label="questions attempted" />
+        <StatPill tone="stars" icon={<ClipboardList size={19} />} value={summary.totalQuestions} label="questions attempted" />
         <StatPill tone="streak" icon={<CheckCircle2 size={19} />} value={progress.correctAnswers} label="correct answers" />
         <StatPill tone="badges" icon={<Percent size={19} />} value={`${summary.accuracy}%`} label="overall accuracy" />
         <StatPill tone="stars" icon={<Star size={19} fill="currentColor" />} value={progress.totalStars} label="total stars" />
@@ -319,29 +367,27 @@ function ParentDashboard({ progress, onBack, onHome }: { progress: Progress; onB
         <StatPill tone="badges" icon={<Award size={19} />} value={progress.badges.length} label="badges unlocked" />
       </section>
       <div className="dashboard-grid">
-        <section className="dashboard-card subject-progress-card"><div className="dashboard-card-heading"><div><span className="section-kicker">At a glance</span><h2>Subject progress</h2></div><BookOpen size={22} /></div>{(["math", "english"] as Subject[]).map((item) => { const data = summary.subjects[item]; const meta = subjectMeta[item]; return <div className="subject-progress-row" key={item}><span className={`subject-progress-icon ${meta.color}`}>{meta.icon}</span><span className="subject-progress-name"><strong>{meta.label}</strong><small>{data.quizzes} quiz{data.quizzes === 1 ? "" : "zes"} · {data.correct}/{data.questions} correct</small></span><span className="subject-progress-meter"><span style={{ width: `${data.accuracy}%` }} /></span><strong className="subject-progress-percent">{data.accuracy}%</strong></div>; })}</section>
-        <section className="dashboard-card category-progress-card"><div className="dashboard-card-heading"><div><span className="section-kicker">Practice map</span><h2>Category performance</h2></div><Grid2X2 size={22} /></div>{Object.keys(summary.categories).length ? <div className="category-list">{Object.entries(summary.categories).sort((a, b) => b[1].accuracy - a[1].accuracy).slice(0, 8).map(([key, data]) => <div className="category-performance" key={key}><span><strong>{formatCategory(key.split(":")[1])}</strong><small>{data.subject === "math" ? "Math" : "English"} · {data.correct}/{data.questions} correct</small></span><strong>{data.accuracy}%</strong></div>)}</div> : <div className="empty-dashboard"><Sparkles size={20} /><span>Complete a quiz to see category patterns here.</span></div>}</section>
+        <section className="dashboard-card subject-progress-card"><div className="dashboard-card-heading"><div><span className="section-kicker">At a glance</span><h2>Subject progress</h2></div><BarChart3 size={21} /></div><div className="subject-progress-list">{Object.entries(summary.subjects).map(([subj, data]) => <div key={subj} className="subject-progress-row"><div className={`subject-progress-icon ${subj}`}>{subj === "math" ? <Calculator size={19} /> : <BookOpen size={19} />}</div><div className="subject-progress-name"><strong style={{ textTransform: "capitalize" }}>{subj}</strong><small>{data.quizzes} quizzes</small></div><div className="subject-progress-meter"><span style={{ width: `${data.accuracy}%`, background: subj === "math" ? "var(--coral)" : "var(--blue)" }} /></div><span className="subject-progress-percent">{data.accuracy}%</span></div>)}</div></section>
+        <section className="dashboard-card category-progress-card"><div className="dashboard-card-heading"><div><span className="section-kicker">Practice map</span><h2>Category performance</h2></div><Grid2X2 size={21} /></div><div className="category-list">{Object.entries(summary.categories).slice(0, 6).map(([key, data]) => <div key={key} className="category-performance"><div style={{ flex: 1, minWidth: 0 }}><strong style={{ fontSize: "13px" }}>{data.subject === "math" ? key.split(":")[1]?.replace("series", "Number Series") : key.split(":")[1]?.replace("simple", "Simple English")}</strong></div><span style={{ fontSize: "12px", marginLeft: "8px", fontWeight: 700, color: "var(--muted)" }}>{data.accuracy}%</span></div>)}</div></section>
       </div>
-      <section className="dashboard-card recent-card"><div className="dashboard-card-heading"><div><span className="section-kicker">The latest adventures</span><h2>Recent quiz results</h2></div><History size={22} /></div>{recent.length ? <div className="recent-table">{recent.map((entry) => <div className="recent-row" key={entry.id}><span className={`recent-subject ${entry.subject}`}>{entry.subject === "math" ? <Calculator size={17} /> : <BookOpen size={17} />}</span><span className="recent-result-name"><strong>{formatCategory(entry.category)}</strong><small>{entry.subject === "math" ? "Math" : "English"} · {entry.difficulty} · {new Date(entry.completedAt).toLocaleDateString()}</small></span><span className="recent-result-score"><strong>{entry.score}</strong><small>{entry.accuracy}% accuracy</small></span><span className="recent-result-stars"><Star size={15} fill="currentColor" /> {entry.starsEarned}</span></div>)}</div> : <div className="empty-dashboard"><History size={20} /><span>No completed quizzes yet. The first adventure will appear here.</span></div>}</section>
-      <section className="dashboard-card badges-card"><div className="dashboard-card-heading"><div><span className="section-kicker">Celebrate growth</span><h2>Badges & achievements</h2></div><Medal size={22} /></div><div className="dashboard-badges">{badgeCatalog.map((badge) => { const unlocked = progress.badges.includes(badge.id); return <div className={`dashboard-badge ${unlocked ? "unlocked" : "locked"}`} key={badge.id}><span>{unlocked ? badge.icon : <LockKeyhole size={16} />}</span><strong>{badge.label}</strong><small>{unlocked ? "Unlocked" : badge.description}</small></div>; })}</div></section>
-      <div className="dashboard-note"><Info size={16} /><span>Parent dashboard is private to this browser. No account or personal information is collected.</span></div>
+      <section className="dashboard-card recent-card"><div className="dashboard-card-heading"><div><span className="section-kicker">The latest adventures</span><h2>Recent quiz results</h2></div><History size={21} /></div><div className="recent-table">{recent.map((entry) => <div key={entry.id} className="recent-row"><div style={{ fontSize: "12px", fontWeight: 700, color: "var(--muted)" }}>{new Date(entry.completedAt).toLocaleDateString()}</div><div style={{ flex: 1 }}><strong style={{ fontSize: "13px" }}>{entry.subject === "math" ? "Math" : "English"}</strong><small style={{ marginLeft: "8px" }}>· {entry.category}</small></div><span style={{ fontSize: "12px", fontWeight: 700, color: "var(--blue-dark)" }}>{entry.accuracy}%</span></div>)}</div></section>
+      <section className="dashboard-card badges-card"><div className="dashboard-card-heading"><div><span className="section-kicker">Celebrate growth</span><h2>Badges & achievements</h2></div><Medal size={21} /></div><div className="dashboard-badges">{badgeCatalog.map((badge) => { const unlocked = progress.badges.includes(badge.id); return <div key={badge.id} className="dashboard-badge"><div style={{ fontSize: "28px", opacity: unlocked ? 1 : 0.3 }}>{badge.icon}</div><strong style={{ fontSize: "11px", marginTop: "6px", opacity: unlocked ? 1 : 0.5 }}>{badge.label}</strong></div>; })}</div></section>
+      <div className="dashboard-note"><Info size={16} /><span>Parent dashboard is private to this device. No data is sent anywhere.</span></div>
     </main>
   </div>;
 }
 
-function ClipboardListIcon() { return <ClipboardList size={19} />; }
-
-function SettingsScreen({ progress, onToggleSound, onBack, onAbout, onDashboard }: { progress: Progress; onToggleSound: () => void; onBack: () => void; onAbout: () => void; onDashboard: () => void }) {
-  return <div className="screen inner-screen"><ScreenHeader onBack={onBack} /><main className="settings-content"><span className="eyebrow"><Settings2 size={17} /> Personalise your clubhouse</span><h1>Settings</h1><p className="screen-intro">Keep things comfy while you learn and play.</p><section className="settings-card"><button className="setting-row" type="button" onClick={onToggleSound}><span className="setting-icon sound">{progress.soundOn ? <Volume2 size={21} /> : <VolumeX size={21} />}</span><span><strong>Sound effects</strong><small>Little clicks and celebration tones</small></span><span className={`toggle ${progress.soundOn ? "on" : ""}`}><span /></span></button><button className="setting-row" type="button" onClick={onDashboard}><span className="setting-icon dashboard"><BarChart3 size={21} /></span><span><strong>Parent Dashboard</strong><small>See real quiz results and learning patterns</small></span><ChevronRight size={20} /></button><button className="setting-row" type="button" onClick={onAbout}><span className="setting-icon info"><Info size={21} /></span><span><strong>About Learn & Play</strong><small>Fun learning through English and Math quizzes</small></span><ChevronRight size={20} /></button></section><div className="storage-note"><Grid2X2 size={18} /><span><strong>Your progress is saved on this device.</strong><small>No account needed. We use your browser’s local storage.</small></span></div></main></div>;
+function SettingsScreen({ progress, onToggleSound, onBack, onAbout, onDashboard, onChangeClass }: { progress: Progress; onToggleSound: () => void; onBack: () => void; onAbout: () => void; onDashboard: () => void; onChangeClass: () => void }) {
+  return <div className="screen inner-screen"><ScreenHeader onBack={onBack} /><main className="settings-content"><span className="eyebrow"><Settings2 size={17} /> Personalise your clubhouse</span><h1>Settings</h1><div style={{ marginTop: "28px" }}><button className="text-button" type="button" onClick={onToggleSound} style={{ marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>{progress.soundOn ? <Volume2 size={18} /> : <VolumeX size={18} />} {progress.soundOn ? "Sound is on" : "Sound is off"}</button><button className="text-button" type="button" onClick={onChangeClass} style={{ marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}><Grid2X2 size={18} /> Change class (currently Class {progress.classLevel})</button><button className="text-button" type="button" onClick={onAbout} style={{ marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}><Info size={18} /> About Learn & Play</button><button className="text-button" type="button" onClick={onDashboard} style={{ display: "flex", alignItems: "center", gap: "8px" }}><BarChart3 size={18} /> Parent dashboard</button></div></main></div>;
 }
 
 function AboutScreen({ onBack }: { onBack: () => void }) {
-  return <div className="screen inner-screen"><ScreenHeader onBack={onBack} /><main className="about-content"><div className="about-logo"><Sparkles size={28} /></div><span className="eyebrow">A tiny clubhouse for curious minds</span><h1>Learn <em>&</em> Play</h1><p>Fun learning through English and Math quizzes.</p><div className="about-points"><div><span>✦</span><strong>Playful by design</strong><small>Big buttons, bright ideas, zero pressure.</small></div><div><span>↗</span><strong>Progress that sticks</strong><small>Your stars and badges stay right here on your device.</small></div><div><span>♡</span><strong>Made for growing brains</strong><small>Short, friendly quizzes for everyday practice.</small></div></div><button className="secondary-button" type="button" onClick={onBack}><ArrowLeft size={18} /> Back to clubhouse</button></main></div>;
+  return <div className="screen inner-screen"><ScreenHeader onBack={onBack} /><main className="about-content"><div className="about-logo"><Sparkles size={28} /></div><span className="eyebrow">About</span><h1>Learn & Play</h1><p>A colorful quiz app designed to help children in Classes 1–5 learn math and English through fun, interactive quizzes.</p><h2 style={{ fontSize: "16px", marginTop: "24px", marginBottom: "12px" }}>Features</h2><ul style={{ fontSize: "14px", lineHeight: "1.8", color: "var(--muted)", marginLeft: "20px" }}><li>Class-level appropriate questions</li><li>Multiple subjects and categories</li><li>Instant feedback and explanations</li><li>Star rewards and badges</li><li>Progress tracking</li><li>Parent dashboard</li><li>Sound effects (optional)</li></ul><p style={{ marginTop: "24px", fontSize: "12px", color: "#a0a7b5" }}>Version 2.0 • Made for curious minds</p></main></div>;
 }
 
 export default function Home() {
-  const [screen, setScreen] = useState<Screen>("home");
-  const [progress, setProgress] = useState<Progress>(loadProgress);
+  const [screen, setScreen] = useState<Screen>("class-select");
+  const [progress, setProgress] = useState<Progress>(loadProgress());
   const [subject, setSubject] = useState<Subject>("math");
   const [category, setCategory] = useState("addition");
   const [difficulty, setDifficulty] = useState<Difficulty>("easy");
@@ -362,10 +408,28 @@ export default function Home() {
   }, []);
   useEffect(() => { if (!toast) return; const timeout = window.setTimeout(() => setToast(""), 2600); return () => window.clearTimeout(timeout); }, [toast]);
 
+  // On initial load, check if class is saved
+  useEffect(() => {
+    if (screen === "class-select") {
+      const savedClass = loadClassLevel();
+      if (savedClass) {
+        // Class already saved, go to home
+        setProgress((p) => ({ ...p, classLevel: savedClass }));
+        setScreen("home");
+      }
+    }
+  }, []);
+
+  const selectClass = (classLevel: number) => {
+    saveClassLevel(classLevel);
+    setProgress((p) => ({ ...p, classLevel }));
+    setScreen("home");
+  };
+
   const startQuiz = (selectedCategory: string, selectedDifficulty: Difficulty, count: number) => {
-    const nextQuestions = getQuizQuestions(subject, selectedCategory, selectedDifficulty, count);
+    const nextQuestions = getQuizQuestions(subject, selectedCategory, selectedDifficulty, count, progress.classLevel);
     if (!nextQuestions.length) { setToast("That mission is still getting ready. Try another one!"); return; }
-    setCategory(selectedCategory); setDifficulty(selectedDifficulty); setQuestions(nextQuestions); setQuestionIndex(0); setCorrectCount(0); setSelectedAnswer(null); setResult(null); setScreen("quiz"); window.scrollTo({ top: 0, behavior: "smooth" });
+    setCategory(selectedCategory); setDifficulty(selectedDifficulty); setQuestions(nextQuestions); setQuestionIndex(0); setCorrectCount(0); setSelectedAnswer(null); setResult(null); setScreen("quiz");
   };
 
   const handleAnswer = (answerIndex: number) => {
@@ -389,25 +453,27 @@ export default function Home() {
     if (completed >= 3) addBadge("streak");
     if (finalCorrect / questions.length >= 0.9) addBadge("champion");
     const unlockedBadge = nextBadges.find((badge) => !progress.badges.includes(badge));
-    const historyEntry = buildQuizHistoryEntry({ subject, category, difficulty, totalQuestions: questions.length, correctAnswers: finalCorrect, score: finalScore, starsEarned: finalCorrect });
-    const nextProgress = { ...progress, totalStars: progress.totalStars + finalCorrect, bestScore: Math.max(progress.bestScore, finalScore), quizzesCompleted: completed, correctAnswers: progress.correctAnswers + finalCorrect, currentStreak: progress.currentStreak + 1, badges: nextBadges, quizHistory: [...progress.quizHistory, historyEntry] };
-    setProgress(nextProgress);
+    const historyEntry = buildQuizHistoryEntry({ subject, category, difficulty, totalQuestions: questions.length, correctAnswers: finalCorrect, score: finalScore, starsEarned: finalCorrect, classLevel: progress.classLevel });
+    const updatedProgress = updateStreak({ ...progress, totalStars: progress.totalStars + finalCorrect, bestScore: Math.max(progress.bestScore, finalScore), quizzesCompleted: completed, correctAnswers: progress.correctAnswers + finalCorrect, badges: nextBadges, quizHistory: [...progress.quizHistory, historyEntry] });
+    setProgress(updatedProgress);
     setResult({ subject, category, difficulty, correct: finalCorrect, total: questions.length, score: finalScore, stars: finalCorrect, newBest, unlockedBadge });
     setScreen("result"); playSound(unlockedBadge ? "achievement" : "complete"); window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const goHome = () => { setScreen("home"); setResult(null); window.scrollTo({ top: 0, behavior: "smooth" }); };
   const goCategories = (nextSubject: Subject) => { setSubject(nextSubject); setScreen("categories"); window.scrollTo({ top: 0, behavior: "smooth" }); };
-  const handleNext = () => { if (questionIndex === questions.length - 1) finishQuiz(selectedAnswer === questions[questionIndex]?.correctAnswer); else { setQuestionIndex((value) => value + 1); setSelectedAnswer(null); window.scrollTo({ top: 0, behavior: "smooth" }); } };
+  const handleNext = () => { if (questionIndex === questions.length - 1) finishQuiz(selectedAnswer === questions[questionIndex]?.correctAnswer); else { setQuestionIndex((value) => value + 1); setSelectedAnswer(null); } };
   const handleAgain = () => { if (result) startQuiz(result.category, result.difficulty, result.total); };
   const backFromCategories = () => setScreen("home");
   const backFromSettings = () => setScreen("home");
+
   return <div className="app-shell"><div className="background-shape shape-one" /><div className="background-shape shape-two" />
+    {screen === "class-select" && <ClassSelectionScreen onSelect={selectClass} />}
     {screen === "home" && <HomeScreen progress={progress} onSubject={goCategories} onSettings={() => setScreen("settings")} onAbout={() => setScreen("about")} onDashboard={() => setScreen("dashboard")} />}
-    {screen === "categories" && <CategoriesScreen subject={subject} onBack={backFromCategories} onSettings={() => setScreen("settings")} onStart={startQuiz} />}
+    {screen === "categories" && <CategoriesScreen subject={subject} onBack={backFromCategories} onSettings={() => setScreen("settings")} onStart={startQuiz} classLevel={progress.classLevel} />}
     {screen === "quiz" && questions.length > 0 && <QuizScreen subject={subject} category={category} difficulty={difficulty} questions={questions} questionIndex={questionIndex} correctCount={correctCount} selectedAnswer={selectedAnswer} onAnswer={handleAnswer} onNext={handleNext} onQuit={goHome} />}
     {screen === "result" && result && <ResultScreen result={result} progress={progress} onAgain={handleAgain} onHome={goHome} />}
-    {screen === "settings" && <SettingsScreen progress={progress} onToggleSound={() => setProgress((value) => ({ ...value, soundOn: !value.soundOn }))} onBack={backFromSettings} onAbout={() => setScreen("about")} onDashboard={() => setScreen("dashboard")} />}
+    {screen === "settings" && <SettingsScreen progress={progress} onToggleSound={() => setProgress((value) => ({ ...value, soundOn: !value.soundOn }))} onBack={backFromSettings} onAbout={() => setScreen("about")} onDashboard={() => setScreen("dashboard")} onChangeClass={() => setScreen("class-select")} />}
     {screen === "dashboard" && <ParentDashboard progress={progress} onBack={backFromSettings} onHome={goHome} />}
     {screen === "about" && <AboutScreen onBack={() => setScreen("home")} />}
     {toast && <div className="toast" role="status"><Sparkles size={17} /> {toast}</div>}
